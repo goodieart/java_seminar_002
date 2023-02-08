@@ -3,6 +3,8 @@ import java.io.FileWriter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Scanner;
+import java.util.InputMismatchException;
+import java.lang.NumberFormatException;
 
 /**
  * Pow
@@ -21,24 +23,30 @@ public class Pow {
             answer = iScanner.next();
         }
 
+        // Переменная interactive введена для улучшения
+        // читаемости кода
+
         if (answer.equals("y"))
             interactive = true;
 
-
-        // TODO: values[...] - отDRYить
         if (interactive) {
-            System.out.print("Введите число x: ");
-            values[0] = iScanner.nextInt();
-
-            System.out.print("Введите степень n: ");
-            values[1] = iScanner.nextInt();
+            values = new int[] { 0, 0 };
+            try {
+                for (int i = 0; i < 2; i++) {
+                    System.out.printf("Введите число %s: ", i == 0 ? "x" : "n");
+                    values[i] = iScanner.nextInt();
+                }
+            } catch (InputMismatchException e) {
+                System.out.println("Неверное значение!");
+                System.exit(1);
+            }
         } else
             values = loadValuesFromFile("data/input.txt");
 
         if (values != null) {
             x = values[0];
             n = values[1];
-            /**
+            /*
              * Здесь проверка на "Ноль в степени ноль" вынесена в тело main,
              * так как существует соглашение о "0 ^ 0 = 1". Источник:
              * https://ru.wikipedia.org/wiki/Возведение_в_степень
@@ -61,11 +69,6 @@ public class Pow {
         }
     }
 
-    /**
-     * @param x
-     * @param n
-     * @return
-     */
     public static float fastPow(int x, int n) {
         float fX = x;
         float result = 1;
@@ -85,25 +88,34 @@ public class Pow {
         return result;
     }
 
-    /**
-     * @param path
-     * @return
-     */
     public static int[] loadValuesFromFile(String path) throws IOException {
         int[] result = new int[] { 0, 0 };
         File file = new File(path);
+        if (!file.exists()) {
+            throw new IOException("Файл не существует!");
+        }
         FileReader fr = new FileReader(file);
         Scanner iScanner = new Scanner(fr);
         int flag = 0;
+
         while (iScanner.hasNextLine()) {
-            String temp = iScanner.nextLine();
-            String[] words = temp.split(" ");
-            if (words[0].equals("a")) {
-                result[0] = Integer.parseInt(words[1]);
-                flag++;
-            } else if (words[0].equals("b")) {
-                result[1] = Integer.parseInt(words[1]);
-                flag++;
+            String line = iScanner.nextLine();
+            /*
+             * Здесь можно использовать Map, но из-за необходимости
+             * анализировать литерал это лишь усложнит код
+             */
+            String[] parts = line.split(" ");
+            try {
+                if (parts[0].equals("a")) {
+                    result[0] = Integer.parseInt(parts[1]);
+                    flag++;
+                } else if (parts[0].equals("b")) {
+                    result[1] = Integer.parseInt(parts[1]);
+                    flag++;
+                }
+            } catch (NumberFormatException e) {
+                System.out.printf("Ошибка входных данных в файле %s", path);
+                System.exit(1);
             }
         }
         iScanner.close();
@@ -115,11 +127,6 @@ public class Pow {
             return null;
     }
 
-    /**
-     * @param path
-     * @param value
-     * @throws IOException
-     */
     public static void saveResultToFile(String path, String value) throws IOException {
         File file = new File(path);
         FileWriter fr = new FileWriter(file);
